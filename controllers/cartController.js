@@ -57,7 +57,7 @@ const getCartItems = async (req, res) => {
             };
         }));
 
-        //const filteredProductDetails = productDetails.filter(details => details !== null);
+        // const filteredProductDetails = productDetails.filter(details => details !== null);
 
         const subtotal = productDetails.reduce((acc, product) => {
             return acc + (product.price * product.quantity);
