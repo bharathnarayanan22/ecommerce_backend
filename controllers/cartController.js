@@ -1,7 +1,6 @@
 const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
-
-
+const cartServices = require('../services/cartServices')
 
 const addToCart = async (req, res) => {
     const user_id = req.user; 
@@ -20,7 +19,7 @@ const addToCart = async (req, res) => {
             const productExists = cart.products.find(p => p.product_id === product_id);
 
             if (productExists) {
-                productExists.quantity += quantity;
+                productExists.quantity = quantity;
             } else {
                 cart.products.push({ product_id, quantity });
             }
@@ -34,6 +33,7 @@ const addToCart = async (req, res) => {
     }
 };
 
+
 const getCartItems = async (req, res) => {
     const user_id = req.user; 
     try {
@@ -42,11 +42,8 @@ const getCartItems = async (req, res) => {
             return res.status(404).send({ message: "Cart not found" });
         }
 
-        console.log('Cart:', cart);
-
         const productDetails = await Promise.all(cart.products.map(async (product) => {
             const productInfo = await Product.findOne({ id: product.product_id });
-            console.log('Product Info:', productInfo);
             if (!productInfo) {
                 return null; 
             }
@@ -60,16 +57,48 @@ const getCartItems = async (req, res) => {
             };
         }));
 
-        const filteredProductDetails = productDetails.filter(details => details !== null);
+        //const filteredProductDetails = productDetails.filter(details => details !== null);
 
-        console.log('Filtered Product Details:', filteredProductDetails);
+        const subtotal = productDetails.reduce((acc, product) => {
+            return acc + (product.price * product.quantity);
+        }, 0);
 
-        res.send(filteredProductDetails);
+        res.send({
+            products: productDetails,
+            subtotal: subtotal
+        });
     } catch (error) {
-        console.error(error);
         res.status(500).send(error.message);
     }
 };
 
+// const deleteCartItem = async (req, res) => {
+//     const result = await cartServices.deleteCartItem(req.user, req.body.product_id);
+//     res.send(result);
+// }
 
-module.exports = { addToCart, getCartItems };
+const deleteProduct = async (req, res) => {
+    const result = await cartServices.deleteProduct(req.user, req.body.product_id);
+    res.send(result);
+}
+
+
+// const deleteCart = async (req, res) => {
+//     const user_id = req.user; 
+//     try {
+//         const cart = await Cart.findOneAndDelete({ user_id });
+//         if (!cart) {
+//             return res.status(404).send({ message: "Cart not found" });
+//         }
+//         res.send(cart);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).send(error.message);
+//     }
+//  };
+
+ 
+
+
+
+module.exports = { addToCart, getCartItems, deleteProduct };
